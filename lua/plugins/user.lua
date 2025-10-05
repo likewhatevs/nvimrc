@@ -21,6 +21,15 @@ return {
 --  event = "BufRead",
 --},
 
-
+-- Override neoclip configuration from astrocommunity
+{
+  "AckslD/nvim-neoclip.lua",
+  opts = {
+    history = 100000,
+    enable_persistent_history = true,
+    continuous_sync = true,
+    preview = true,
+  },
+},
 
 }

@@ -18,6 +18,9 @@ return {
   opts = function(_, opts)
     -- Extend telescope configuration using AstroNvim pattern
     return require("astrocore").extend_tbl(opts, {
+      defaults = {
+        dynamic_preview_title = true,
+      },
       extensions = {
         -- FZF Native extension
         fzf = {
