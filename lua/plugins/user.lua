@@ -7,6 +7,9 @@ return {
 {
   "lambdalisue/vim-suda",
   cmd = { "SudaRead", "SudaWrite" },
+  keys = {
+    { "<Leader>kw", "<cmd>SudaWrite<cr>", desc = "Sudo write current file" },
+  },
   init = function()
   end,
 },

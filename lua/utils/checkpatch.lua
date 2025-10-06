@@ -95,7 +95,7 @@ function M.smart_lint()
   if not M.find_checkpatch_script(bufnr) then
     -- Only show this message once per session
     if not vim.g.checkpatch_warning_shown then
-      require("notify_utils").notify(
+      require("utils.notify").notify(
         "Checkpatch script not found. Install checkpatch.pl or ensure you're in a kernel source tree with scripts/checkpatch.pl",
         { title = "Checkpatch", level = "warn" }
       )
@@ -121,7 +121,7 @@ function M.show_status()
     "  Current file type: " .. vim.bo.filetype,
   }
 
-  require("notify_utils").notify(table.concat(status_lines, "\n"), {
+  require("utils.notify").notify(table.concat(status_lines, "\n"), {
     title = "Checkpatch",
     level = "info"
   })

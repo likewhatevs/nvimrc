@@ -1,12 +1,10 @@
--- Customize None-ls sources for kernel development
-
 ---@type LazySpec
 return {
   "nvimtools/none-ls.nvim",
   opts = function(_, opts)
     local h = require("null-ls.helpers")
     local methods = require("null-ls.methods")
-    local checkpatch_utils = require("checkpatch_utils")
+    local checkpatch_utils = require("utils.checkpatch")
 
     -- Custom checkpatch source using proper none-ls builtin pattern
     local checkpatch = h.make_builtin({
@@ -36,7 +34,7 @@ return {
           { "filename", "row", "severity", "message" },  -- groups
           {
             severities = {
-              ERROR = h.diagnostics.severities["error"],
+              ERROR = h.diagnostics.severities["warning"],  -- Convert errors to warnings
               WARNING = h.diagnostics.severities["warning"],
               CHECK = h.diagnostics.severities["information"],
             },

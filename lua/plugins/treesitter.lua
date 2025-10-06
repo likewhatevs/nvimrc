@@ -30,6 +30,9 @@ return {
       "markdown",   -- Markdown documentation
       "markdown_inline", -- Inline markdown
 
+      -- Kernel development specific
+      "kconfig",    -- Kernel configuration files
+
       -- Git and version control
       "git_config", -- Git config files
       "git_rebase", -- Git rebase files

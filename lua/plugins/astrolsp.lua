@@ -19,7 +19,7 @@ return {
     formatting = {
       -- control auto formatting on save
       format_on_save = {
-        enabled = false, -- enable or disable format on save globally
+        enabled = false, -- disabled
         allow_filetypes = { -- enable format on save for specified filetypes only
           -- "go",
         },

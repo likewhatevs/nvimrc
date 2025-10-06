@@ -17,6 +17,12 @@ return {
 
   -- Enhanced git workflow
   { import = "astrocommunity.git.diffview-nvim" }, -- Better diff viewing and git file history
+  { import = "astrocommunity.git.blame-nvim" }, -- Git blame integration
+  { import = "astrocommunity.git.octo-nvim" }, -- GitHub integration
+
+  -- Productivity and utility tools
+  { import = "astrocommunity.register.nvim-neoclip-lua" }, -- Clipboard manager
+  { import = "astrocommunity.quickfix.nvim-bqf" }, -- Better quickfix
 
   -- import/override with your plugins folder
 }

@@ -10,7 +10,7 @@ return {
   opts = {
     -- Configure core features of AstroNvim
     features = {
-      large_buf = { size = 1024 * 256, lines = 10000 }, -- set global limits for large files for disabling features like treesitter
+      large_buf = { size = 1024 * 1024, lines = 50000 }, -- set global limits for large files (increased for kernel development)
       autopairs = true, -- enable autopairs at start
       cmp = true, -- enable completion at start
       diagnostics = { virtual_text = true, virtual_lines = false }, -- diagnostic settings on startup
@@ -26,33 +26,79 @@ return {
     filetypes = {
       -- see `:h vim.filetype.add` for usage
       extension = {
-        foo = "fooscript",
+        -- Device tree files (kernel development)
+        dts = "dts",
+        dtsi = "dts",
+        -- Kernel config files
+        defconfig = "kconfig",
       },
       filename = {
-        [".foorc"] = "fooscript",
+        -- Kernel build and config files
+        ["Kconfig"] = "kconfig",
+        ["Kbuild"] = "make",
+        [".config"] = "kconfig", -- Kernel configuration
+        ["MAINTAINERS"] = "maintainers", -- Kernel maintainers file
       },
       pattern = {
-        [".*/etc/foo/.*"] = "fooscript",
+        -- Kernel source patterns
+        [".*/arch/.*/Kconfig.*"] = "kconfig",
+        [".*/drivers/.*/Kconfig.*"] = "kconfig",
+        [".*/fs/.*/Kconfig.*"] = "kconfig",
+        [".*/net/.*/Kconfig.*"] = "kconfig",
+        [".*/kernel/.*/Kconfig.*"] = "kconfig",
       },
     },
     -- Configure autocommands
-    autocmds = {},
+    autocmds = {
+      -- Kernel development settings
+      kernel_development = {
+        {
+          event = { "BufRead", "BufNewFile" },
+          pattern = { "*.c", "*.h", "*.S", "*.dts", "*.dtsi" },
+          callback = function()
+            local checkpatch_utils = require("utils.checkpatch")
+            if checkpatch_utils.is_kernel_source_tree() then
+              -- Kernel coding style: tabs, 8-space width
+              vim.opt_local.expandtab = false
+              vim.opt_local.tabstop = 8
+              vim.opt_local.shiftwidth = 8
+              vim.opt_local.softtabstop = 8
+              -- Show column guide at 80 characters (kernel line limit)
+              vim.opt_local.colorcolumn = "80"
+            end
+          end,
+          desc = "Set kernel coding style for kernel source files",
+        },
+        {
+          event = "BufWritePre",
+          pattern = { "*.c", "*.h" },
+          callback = function()
+            local checkpatch_utils = require("utils.checkpatch")
+            if checkpatch_utils.is_kernel_source_tree() then
+              -- Remove trailing whitespace (kernel requirement)
+              vim.cmd([[%s/\s\+$//e]])
+            end
+          end,
+          desc = "Remove trailing whitespace in kernel source files",
+        },
+      },
+    },
     -- Configure commands (AstroNvim way)
     commands = {
       -- Checkpatch commands (now using none-ls)
       Checkpatch = {
         function()
-          local checkpatch_util = require("checkpatch_utils")
+          local checkpatch_util = require("utils.checkpatch")
 
           if checkpatch_util.is_kernel_source_tree() then
             -- Simple save to trigger none-ls
             vim.cmd("write")
-            require("notify_utils").notify("Checkpatch diagnostics refreshed", {
+            require("utils.notify").notify("Checkpatch diagnostics refreshed", {
               title = "Checkpatch",
               level = "info"
             })
           else
-            require("notify_utils").notify("Not in a kernel source tree", {
+            require("utils.notify").notify("Not in a kernel source tree", {
               title = "Checkpatch",
               level = "warn"
             })
@@ -61,43 +107,8 @@ return {
         desc = "Manually run checkpatch on current buffer",
       },
       CheckpatchStatus = {
-        function() require("checkpatch_utils").show_status() end,
+        function() require("utils.checkpatch").show_status() end,
         desc = "Show checkpatch configuration status",
-      },
-
-      -- Mason cleanup commands for codelldb conflicts
-      MasonCleanCodelldb = {
-        function()
-          local mason_registry = require("mason-registry")
-          local codelldb_pkg = mason_registry.get_package("codelldb")
-
-          if codelldb_pkg:is_installed() then
-            require("notify_utils").notify("Uninstalling codelldb via Mason...", { title = "Mason", level = "info" })
-            codelldb_pkg:uninstall():once("closed", function()
-              require("notify_utils").notify("Codelldb uninstalled successfully", { title = "Mason", level = "info" })
-            end)
-          else
-            require("notify_utils").notify("Codelldb not installed via Mason", { title = "Mason", level = "info" })
-          end
-        end,
-        desc = "Uninstall codelldb if installed via Mason",
-      },
-
-      MasonCleanCache = {
-        function()
-          -- Clear Mason cache directory
-          local mason_path = vim.fn.stdpath("data") .. "/mason"
-          local cmd = "rm -rf " .. mason_path .. "/packages/codelldb* " .. mason_path .. "/bin/codelldb*"
-
-          require("notify_utils").notify("Cleaning Mason codelldb cache...", { title = "Mason", level = "info" })
-
-          vim.fn.system(cmd)
-          require("notify_utils").notify("Mason codelldb cache cleaned. Restart nvim for full effect.", {
-            title = "Mason",
-            level = "info"
-          })
-        end,
-        desc = "Clean Mason cache for codelldb",
       },
     },
     -- vim options can be configured here
@@ -162,7 +173,7 @@ return {
             if ok and telescope.extensions and telescope.extensions.frecency then
               local frecency_ok, err = pcall(vim.cmd, "Telescope frecency")
               if not frecency_ok then
-                require("notify_utils").notify("Frecency failed, falling back to find_files: " .. err, {
+                require("utils.notify").notify("Frecency failed, falling back to find_files: " .. err, {
                   title = "Telescope",
                   level = "warn"
                 })
@@ -178,6 +189,17 @@ return {
         -- Kernel development tools (checkpatch)
         ["<Leader>kc"] = { "<cmd>Checkpatch<cr>", desc = "Run checkpatch on current file" },
         ["<Leader>ks"] = { "<cmd>CheckpatchStatus<cr>", desc = "Show checkpatch status" },
+        ["<Leader>km"] = { "<cmd>make<cr>", desc = "Run make in current directory" },
+        ["<Leader>kM"] = { "<cmd>make clean<cr>", desc = "Run make clean" },
+        ["<Leader>kt"] = { "<cmd>make modules_install<cr>", desc = "Install kernel modules" },
+
+        -- Git workflow enhancements for kernel development
+        ["<Leader>gb"] = { "<cmd>BlameToggle<cr>", desc = "Toggle git blame" },
+        ["<Leader>gB"] = { "<cmd>BlameToggle window<cr>", desc = "Git blame in window" },
+        ["<Leader>gd"] = { "<cmd>DiffviewOpen<cr>", desc = "Open diff view" },
+        ["<Leader>gD"] = { "<cmd>DiffviewClose<cr>", desc = "Close diff view" },
+        ["<Leader>gh"] = { "<cmd>DiffviewFileHistory %<cr>", desc = "File history" },
+        ["<Leader>gH"] = { "<cmd>DiffviewFileHistory<cr>", desc = "Repository history" },
 
         -- Keymap viewing tools
         ["<Leader>Kk"] = { "<cmd>Telescope keymaps<cr>", desc = "Search all keymaps" },
