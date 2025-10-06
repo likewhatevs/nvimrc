@@ -45,6 +45,9 @@ return {
       "comment",    -- Comments highlighting
     },
 
+    -- Ignore parsers that conflict with plugins
+    ignore_install = { "org" }, -- nvim-orgmode handles org syntax
+
     -- Enable advanced treesitter features
     highlight = {
       enable = true,
