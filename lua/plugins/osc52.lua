@@ -13,8 +13,10 @@ return {
         require('osc52').copy(table.concat(lines, '\n'))
       end
 
-      local function paste()
-        return { vim.fn.split(vim.fn.getreg(''), '\n'), vim.fn.getregtype('') }
+      local function paste(register)
+        -- Use the specified register ('+' or '*'), falling back to unnamed register
+        local reg = register or '+'
+        return { vim.fn.split(vim.fn.getreg(reg), '\n'), vim.fn.getregtype(reg) }
       end
 
       vim.g.clipboard = {
@@ -27,7 +29,18 @@ return {
       if vim.env.SSH_CONNECTION then
         vim.api.nvim_create_autocmd("TextYankPost", {
           callback = function()
-            require('osc52').copy_register('+')
+            -- Add error handling and skip if register is empty or invalid
+            local ok, err = pcall(function()
+              local reg_contents = vim.fn.getreg('+')
+              -- Only copy if register has valid contents
+              if reg_contents and reg_contents ~= '' then
+                require('osc52').copy_register('+')
+              end
+            end)
+            if not ok then
+              -- Silently ignore errors to prevent disrupting workflow
+              -- vim.notify("OSC52 copy failed: " .. tostring(err), vim.log.levels.DEBUG)
+            end
           end,
         })
       end
