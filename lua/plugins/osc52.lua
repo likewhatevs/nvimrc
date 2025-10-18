@@ -9,32 +9,14 @@ return {
         trim = false, -- Disable trimming of surrounding whitespace
       }
 
-      local function copy(lines, _)
-        require('osc52').copy(table.concat(lines, '\n'))
-      end
-
-      local function paste(register)
-        -- Use the specified register ('+' or '*'), falling back to unnamed register
-        local reg = register or '+'
-        return { vim.fn.split(vim.fn.getreg(reg), '\n'), vim.fn.getregtype(reg) }
-      end
-
-      vim.g.clipboard = {
-        name = 'osc52',
-        copy = { ['+'] = copy, ['*'] = copy },
-        paste = { ['+'] = paste, ['*'] = paste },
-      }
-
-      -- Optional: Automatically use OSC52 for SSH sessions
+      -- Automatically use OSC52 for SSH sessions to copy to local clipboard
       if vim.env.SSH_CONNECTION then
         vim.api.nvim_create_autocmd("TextYankPost", {
           callback = function()
-            -- Add error handling and skip if register is empty or invalid
+            -- Copy yanked text to local clipboard via OSC52
             local ok, err = pcall(function()
-              local reg_contents = vim.fn.getreg('+')
-              -- Only copy if register has valid contents
-              if reg_contents and reg_contents ~= '' then
-                require('osc52').copy_register('+')
+              if vim.v.event.operator == 'y' then
+                require('osc52').copy(table.concat(vim.v.event.regcontents, '\n'))
               end
             end)
             if not ok then

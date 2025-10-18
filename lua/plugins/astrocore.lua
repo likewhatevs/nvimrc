@@ -120,6 +120,9 @@ return {
         signcolumn = "yes", -- sets vim.opt.signcolumn to yes
         wrap = true, -- sets vim.opt.wrap
 
+        -- Clipboard: disable clipboard=unnamedplus for SSH (use OSC52 instead)
+        clipboard = "", -- don't sync with system clipboard, use OSC52 autocmd
+
         -- Undo persistence across restarts
         undofile = true, -- enable persistent undo
         undolevels = 10000, -- maximum number of changes that can be undone
